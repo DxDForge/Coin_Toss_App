@@ -116,10 +116,12 @@ class _CoinSelectionPageState extends State<CoinSelectionPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
 Coin3D(
+  key: ValueKey(coin.name),
   coinType: coin,
   size: 120,
   isSpinning: selectedCoin?.name == coin.name,
-  showTail: false, // Shows the head side by default
+  // spinIntensity: SpinIntensity.low,
+  showTail: false,
 ),
                         const SizedBox(height: 10),
                         Text(

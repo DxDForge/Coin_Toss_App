@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:coin_toss/controllers/coin_flip_controller.dart';
 import 'package:coin_toss/models/3dcoins.dart';
 import 'package:coin_toss/models/Scenario.dart';
@@ -6,7 +8,6 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:confetti/confetti.dart';
 import 'package:animated_text_kit/animated_text_kit.dart';
-import 'dart:math';
 
 // Import necessary pages and dependencies
 import 'coin_selection_page.dart';
@@ -21,6 +22,20 @@ class CoinFlipHomePage extends StatefulWidget {
 
 class _CoinFlipHomePageState extends State<CoinFlipHomePage>
     with TickerProviderStateMixin {
+  // Add this method inside the _CoinFlipHomePageState class
+  String _getRandomInterpretation(String result) {
+    // Get the appropriate list of interpretations based on the result
+    final interpretations = _resultInterpretations[result] ?? [];
+
+    // If no interpretations available, return a default message
+    if (interpretations.isEmpty) {
+      return 'The coin has spoken!';
+    }
+
+    // Return a random interpretation from the list
+    return interpretations[Random().nextInt(interpretations.length)];
+  }
+
   // Controller and State Management
   late CoinFlipController _controller;
   late ConfettiController _confettiController;
@@ -63,95 +78,111 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
     ]
   };
 
+  // Update the initState to properly initialize animations
   @override
   void initState() {
     super.initState();
 
-    // Initialize Controllers
     _controller = CoinFlipController(
       currentCoin: _currentCoin,
     );
+
     _confettiController =
         ConfettiController(duration: const Duration(seconds: 2));
 
-    // Initialize Animations
+    // Configure flip animation with proper completion behavior
     _flipAnimationController = AnimationController(
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
 
-    // Result Reveal Animation
+    // Result animation setup
     _resultAnimationController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
+
     _resultAnimation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
       parent: _resultAnimationController,
       curve: Curves.elasticOut,
     ));
 
-    // Load Selected Coin
+    // Load selected coin
     _controller.loadSelectedCoin().then((_) {
-      setState(() {
-        _currentCoin = _controller.currentCoin;
-      });
+      if (mounted) {
+        setState(() {
+          _currentCoin = _controller.currentCoin;
+        });
+      }
     });
   }
 
-  // Enhanced Dramatic Result Reveal Method
+  // Update the _revealResult method to handle state properly
   void _revealResult(String result) {
-    // Select a random dramatic phrase
-    final dramaticPhrase =
-        _dramaticPhrases[Random().nextInt(_dramaticPhrases.length)];
-
-    // Select a random interpretation for the result
-    final interpretations = _resultInterpretations[result] ?? [];
-    final interpretation = interpretations.isNotEmpty
-        ? interpretations[Random().nextInt(interpretations.length)]
-        : 'Your moment of truth';
+    if (!mounted) return;
 
     setState(() {
       _showResultOverlay = true;
       _currentResult = result;
-      _resultInterpretation = interpretation;
-      _currentBackground = result == 'Heads'
-          ? const Color(0xFF4A90E2) // Vibrant blue for Heads
-          : const Color(0xFFE74C3C); // Energetic red for Tails
+      _resultInterpretation = _getRandomInterpretation(result);
+      _currentBackground =
+          result == 'Heads' ? const Color(0xFF4A90E2) : const Color(0xFFE74C3C);
     });
 
-    // Trigger result animation
     _resultAnimationController.forward(from: 0.0);
 
-    // Auto-dismiss result after 3 seconds
+    // Auto-dismiss result
     Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
       setState(() {
         _showResultOverlay = false;
       });
+      _resultAnimationController.reset();
     });
   }
-
   // Coin Flip Method
+// In _CoinFlipHomePageState class
+
   void _flipCoin() {
     if (_isFlipping) return;
 
     setState(() {
       _isFlipping = true;
       _showResultOverlay = false;
+      _currentPrompt = 'Flipping...';
     });
 
-    _flipAnimationController.forward(from: 0.0);
+    // Reset animations
+    _flipAnimationController.reset();
+    _resultAnimationController.reset();
 
-    Future.delayed(const Duration(milliseconds: 1500), () {
-      final flipResult = _controller.flipCoin();
+    // Start the flip animation
+    _flipAnimationController.forward();
+
+    // Calculate total animation duration
+    final animationDuration = _flipAnimationController.duration!.inMilliseconds;
+
+    // Get flip result
+    final flipResult = _controller.flipCoin();
+
+    // Schedule the result reveal after animation completes
+    Future.delayed(Duration(milliseconds: animationDuration), () {
+      if (!mounted) return;
 
       setState(() {
         _currentBackground = flipResult.newBackground;
         _currentPrompt = flipResult.newPrompt;
-        _isFlipping = false;
+        _isFlipping = false; // Reset flipping state
+        _flipAnimationController
+            .reset(); // Reset the animation immediately after flip completes
       });
 
-      _revealResult(flipResult.result);
-      _confettiController.play();
+      // Show result with a slight delay
+      Future.delayed(const Duration(milliseconds: 600), () {
+        if (!mounted) return;
+        _revealResult(flipResult.result);
+        _confettiController.play();
+      });
     });
   }
 
@@ -289,8 +320,7 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
             title: 'Coin Toss Game',
             onTap: () => Navigator.push(
               context,
-              MaterialPageRoute(
-                  builder: (context) => MathGameView()),
+              MaterialPageRoute(builder: (context) => MathGameView()),
             ),
           ),
           _buildDrawerNavItem(
@@ -414,12 +444,12 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
                             coinType: _currentCoin,
                             size: 250,
                             isSpinning: _isFlipping,
-                            spinIntensity: SpinIntensity.medium,
+                            spinIntensity: SpinIntensity.slow,
                           ),
                         ),
                         const SizedBox(height: 20),
                         Text(
-                          _controller.gameState.currentResult,
+                         _isFlipping?'': _controller.gameState.currentResult,
                           style: GoogleFonts.orbitron(
                             color: Colors.white,
                             fontSize: 48,
