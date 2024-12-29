@@ -4,6 +4,7 @@ import 'package:coin_toss/controllers/coin_flip_controller.dart';
 import 'package:coin_toss/models/3dcoins.dart';
 import 'package:coin_toss/models/Scenario.dart';
 import 'package:coin_toss/views/Screens/math_game_page.dart';
+import 'package:coin_toss/views/widgets/app_drawer.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:confetti/confetti.dart';
@@ -12,6 +13,7 @@ import 'package:animated_text_kit/animated_text_kit.dart';
 // Import necessary pages and dependencies
 import 'coin_selection_page.dart';
 import 'settings_page.dart';
+import 'package:coin_toss/services/history_service.dart';
 
 class CoinFlipHomePage extends StatefulWidget {
   const CoinFlipHomePage({Key? key}) : super(key: key);
@@ -121,6 +123,9 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
   void _revealResult(String result) {
     if (!mounted) return;
 
+    // Add this line to record the flip
+    HistoryService().addFlip(result);
+
     setState(() {
       _showResultOverlay = true;
       _currentResult = result;
@@ -178,7 +183,7 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
       });
 
       // Show result with a slight delay
-      Future.delayed(const Duration(milliseconds: 600), () {
+      Future.delayed(const Duration(milliseconds: 700), () {
         if (!mounted) return;
         _revealResult(flipResult.result);
         _confettiController.play();
@@ -358,7 +363,7 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      drawer: _buildCustomDrawer(),
+      drawer: const AppDrawer(),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -449,7 +454,9 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
                         ),
                         const SizedBox(height: 20),
                         Text(
-                         _isFlipping?'': _controller.gameState.currentResult,
+                          _isFlipping
+                              ? ''
+                              : _controller.gameState.currentResult,
                           style: GoogleFonts.orbitron(
                             color: Colors.white,
                             fontSize: 48,
@@ -563,16 +570,48 @@ class _CoinFlipHomePageState extends State<CoinFlipHomePage>
                               await Future.delayed(const Duration(seconds: 2));
 
                               // Perform the scenario coin flip
+                              setState(() {
+                                _isFlipping = true;
+                                _showResultOverlay = false;
+                                _currentPrompt = 'Flipping...';
+                              });
+
+                              // Reset animations
+                              _flipAnimationController.reset();
+                              _resultAnimationController.reset();
+
+                              // Start the flip animation
+                              _flipAnimationController.forward();
+
+                              // Calculate total animation duration
+                              final animationDuration = _flipAnimationController
+                                  .duration!.inMilliseconds;
+
+                              // Get flip result
                               final flipResult =
                                   _controller.flipCoin(isScenarioMode: true);
 
-                              setState(() {
-                                _currentBackground = flipResult.newBackground;
-                                _currentPrompt = flipResult.newPrompt;
-                              });
+                              // Schedule the result reveal after animation completes
+                              Future.delayed(
+                                  Duration(milliseconds: animationDuration),
+                                  () {
+                                if (!mounted) return;
 
-                              _revealResult(flipResult.result);
-                              _confettiController.play();
+                                setState(() {
+                                  _currentBackground = flipResult.newBackground;
+                                  _currentPrompt = flipResult.newPrompt;
+                                  _isFlipping = false;
+                                  _flipAnimationController.reset();
+                                });
+
+                                // Show result with a slight delay
+                                Future.delayed(
+                                    const Duration(milliseconds: 600), () {
+                                  if (!mounted) return;
+                                  _revealResult(flipResult.result);
+                                  _confettiController.play();
+                                });
+                              });
                             }
                           }
                         },

@@ -48,6 +48,8 @@ dependencies:
   fl_chart: ^0.69.2
   get: ^4.6.6
   vector_math: ^2.1.4
+  package_info_plus: ^8.1.2
+  intl: ^0.20.1
 
 dev_dependencies:
   flutter_test:

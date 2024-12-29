@@ -45,7 +45,8 @@ class _CoinSelectionPageState extends State<CoinSelectionPage> {
   @override
   Widget build(BuildContext context) {
     final filteredCoins = CoinTypes.availableCoins
-        .where((coin) => coin.name.toLowerCase().contains(searchQuery.toLowerCase()))
+        .where((coin) =>
+            coin.name.toLowerCase().contains(searchQuery.toLowerCase()))
         .toList();
 
     return Scaffold(
@@ -97,8 +98,8 @@ class _CoinSelectionPageState extends State<CoinSelectionPage> {
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 300),
                     decoration: BoxDecoration(
-                      color: selectedCoin?.name == coin.name 
-                          ? Colors.deepPurple[700] 
+                      color: selectedCoin?.name == coin.name
+                          ? Colors.deepPurple[700]
                           : Colors.deepPurple[600],
                       borderRadius: BorderRadius.circular(15),
                       border: selectedCoin?.name == coin.name
@@ -115,22 +116,22 @@ class _CoinSelectionPageState extends State<CoinSelectionPage> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-Coin3D(
-  key: ValueKey(coin.name),
-  coinType: coin,
-  size: 120,
-  isSpinning: selectedCoin?.name == coin.name,
-  // spinIntensity: SpinIntensity.low,
-  showTail: false,
-),
+                        Coin3D(
+                          key: ValueKey(coin.name),
+                          coinType: coin,
+                          size: 120,
+                          isSpinning: selectedCoin?.name == coin.name,
+                          spinIntensity: SpinIntensity.medium,
+                          showTail: false,
+                        ),
                         const SizedBox(height: 10),
                         Text(
                           coin.name,
                           style: GoogleFonts.poppins(
                             color: Colors.white,
                             fontSize: 16,
-                            fontWeight: selectedCoin?.name == coin.name 
-                                ? FontWeight.bold 
+                            fontWeight: selectedCoin?.name == coin.name
+                                ? FontWeight.bold
                                 : FontWeight.normal,
                           ),
                         ),
@@ -147,7 +148,8 @@ Coin3D(
               onPressed: _saveSelectedCoin,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),

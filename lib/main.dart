@@ -7,8 +7,11 @@ import 'package:coin_toss/views/Screens/quiz_page.dart';
 import 'package:coin_toss/views/Screens/settings_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:coin_toss/services/settings_service.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await SettingsService().init();
   runApp(
     MultiProvider(
       providers: [
